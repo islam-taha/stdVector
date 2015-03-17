@@ -1,214 +1,226 @@
-# stdVector
-simple implementation to std::vector not with all functions
-#include <algorithm>
-#include <memory>
 #include <iostream>
-#include <cstddef>
-#include <initializer_list>
-#include <cstring>
+#include <cstdio>
 #include <type_traits>
-#include <ctime>
+#include <cstring>
+#include <string>
+#include <algorithm>
+#include <cassert>
+#include <vector>
 using namespace std;
 
 #define eprintf(...)  fprintf(stderr, __VA_ARGS__)
 #define TIMESTAMP(x)  eprintf("[" #x "] Time = %.5lfs\n",clock()*1.0/CLOCKS_PER_SEC)
 
-#ifdef DEBUG
 struct __timestamper {
   ~__timestamper() {
     TIMESTAMP(END);
   }
 } __Timestamper;
-#else
-struct __timestamper {};
-#endif
 
 typedef unsigned int size_type;
 
-template <typename T, typename Allocator = allocator<T> >
-class vector {
+template <typename _Tp, typename _Allocator = allocator<_Tp> >
+class Vector {
 private:
-  Allocator alloc;
-
-  T* buffer;
-
+  _Allocator alloc;
+  
+  _Tp* buffer;
+  
   size_type __size;
   size_type __capacity;
   
 public:
   
-  explicit vector(const Allocator& = Allocator()) noexcept :
-    __size(0), __capacity(0)
+  explicit Vector(const _Allocator& __a = _Allocator()) :
+		__size(0), __capacity(0), alloc(__a) { buffer = alloc.allocate(0); }
+  
+  Vector(size_type __n, const _Allocator& __a = _Allocator()) :
+		__size(__n), __capacity(__n), alloc(__a) {
+      buffer = alloc.allocate(__n);
+      uninitialized_fill_n(buffer, __n, _Tp());
+    }
+  
+  Vector(size_type __n, const _Tp& value, const _Allocator& __a = _Allocator()) :
+		__size(__n), __capacity(__n), alloc(__a) {
+      buffer = alloc.allocate(__n);
+      uninitialized_fill_n(buffer, __n, value);
+    }
+  
+  template<class InputIterator, class = typename enable_if<is_same<InputIterator, const _Tp*>::value>::type>
+  Vector(InputIterator __first, InputIterator __last, const _Allocator& __a = _Allocator()) :
+  __size(0), __capacity(0), alloc(__a)
   {
+    buffer = alloc.allocate(0);
+    for (; __first != __last; ++__first) {
+      push_back(*__first);
+    }
   }
   
-  explicit vector(size_type __n, const Allocator& = Allocator()) :
-    __size(__n), __capacity(__n)
-  {
-    buffer = alloc.allocate(__n);
-    uninitialized_fill_n(buffer, __n, T());
-  }
+  ~Vector();
   
-  explicit vector(size_type __n, const T& value, const Allocator& = Allocator()) :
-    __size(__n), __capacity(__n)
-  {
-    buffer = alloc.allocate(__n);
-    uninitialized_fill_n(buffer, __n, value);
+  Vector& operator=(const Vector<_Tp, _Allocator>& __o) {
+    __size = __o.size();
+    __capacity = __o.capacity();
+    return Vector(__o.begin(), __o.end());
   }
   
   void reserve(const size_type& size);
-  void push_back(const T& value);
   void pop_back();
-  void clear();
   
-  const T* begin() const {
+  void assign(size_type __n, const _Tp& value);
+  void resize(size_type __n, const _Tp& value);
+  
+  void clear() {
+    if (!__capacity)
+      return;
+    while (__size > 0)
+      pop_back();
+    alloc.deallocate(this->buffer, __capacity);
+    __size = __capacity = 0;
+  }
+  
+  const _Tp* begin() const {
     return buffer;
   }
   
-  const T* end() const {
+  const _Tp* end() const {
     return buffer + __size;
   }
   
-  const T& front() const {
-    try {
-      return buffer[0];
-    } catch(...) {
-      cerr << "vector is empty!" << endl;
-      exit(0);
-    }
+  const _Tp& front() const {
+    assert(!empty());
+    return buffer[0];
   }
   
-  const T& back() const {
-    try {
-      return buffer[__size - 1];
-    } catch(...) {
-      cerr << "vector is empty!" << endl;
-      exit(0);
-    }
+  const _Tp& back() const {
+    assert(!empty());
+    return buffer[__size - 1];
   }
   
-  const size_type size() const noexcept {
+  const size_type size() const {
     return this->__size;
   }
   
-  const bool empty() const noexcept {
+  const size_type capacity() const {
+    return __capacity;
+  }
+  
+  const bool empty() const {
     return (__size == 0);
   }
   
-  const T& operator[](const size_type& index) const {
-    try {
-      return buffer[index];
-    } catch(...) {
-      cerr << "index out of boundary!" << endl;
-      exit(0);
-    }
+  const _Tp& operator[](const size_type& index) const {
+    assert(index >= 0 && index < __capacity);
+    return buffer[index];
   }
   
-  T& operator[](const size_type& index) {
-    try {
-      return buffer[index];
-    } catch(...) {
-      cerr << "index out of boundary!" << endl;
-      exit(0);
-    }
+  _Tp& operator[](const size_type& index) {
+    assert(index >= 0 && index < __capacity);
+    return buffer[index];
   }
   
+  void push_back(const _Tp& value) {
+    if (__size >= __capacity) {
+      reserve(__capacity > 0 ? __capacity * 2 : 1);
+    }
+    alloc.construct(this->buffer + __size, value);
+    ++__size;
+  }
 };
 
-template <class T, typename Allocator>
-void vector<T, Allocator>::reserve(const size_type& size) {
+template <typename _Tp, typename _Allocator>
+void Vector<_Tp, _Allocator>::reserve(const size_type& size) {
   if (size <= __capacity)
     return;
   
-  T* newBuffer = alloc.allocate(size);
+  _Tp* newBuffer = alloc.allocate(size);
   
-  uninitialized_copy(buffer, buffer + __size, newBuffer);
+  uninitialized_copy(this->buffer, this->buffer + __size, newBuffer);
   
   for (size_type i = 0; i < __size; i++) {
     alloc.destroy(&buffer[i]);
   }
   
-  alloc.deallocate(buffer, __capacity);
-  
+  alloc.deallocate(this->buffer, __capacity);
+  this->buffer = newBuffer;
   __capacity = size;
-  buffer = newBuffer;
-  
 }
 
-template <class T, typename Allocator>
-void vector<T, Allocator>::push_back(const T& value) {
-  if (__size >= __capacity) {
-    reserve(__capacity * 2 + 2);
-  }
-  try {
-    buffer[__size++] = value;
-  } catch(...) {
-    cerr << "A7EH" << endl;
-    exit(0);
-  }
-}
 
-template <class T, typename Allocator>
-void vector<T, Allocator>::pop_back() {
+template <typename _Tp, typename _Allocator>
+void Vector<_Tp, _Allocator>::pop_back() {
   if (__size == 0)
     return;
   alloc.destroy(&buffer[__size - 1]);
   --__size;
 }
 
-template <class T, typename Allocator>
-void vector<T, Allocator>::clear() {
-  for (int i = 0; i < __size; i++) {
-    alloc.destroy(&buffer[i]);
+template<typename _Tp, typename _Allocator>
+Vector<_Tp, _Allocator>::~Vector() {
+  while (__size > 0) {
+    pop_back();
   }
-  alloc.deallocate(buffer, __capacity);
-  __size = __capacity = 0;
 }
 
-template <class T, typename Allocator>
+template <typename _Tp, typename _Allocator>
+void Vector<_Tp, _Allocator>::assign(size_type __n, const _Tp& value) {
+  resize(__n, value);
+}
+
+template <typename _Tp, typename _Allocator>
+void Vector<_Tp, _Allocator>::resize(size_type __n, const _Tp& value) {
+  _Tp* newBuffer = alloc.allocate(__n);
+  
+  uninitialized_fill_n(newBuffer, __n, value);
+  
+  for (size_type i = 0; i < __size; i++)
+    alloc.destroy(buffer + i);
+  
+  alloc.deallocate(buffer, __capacity);
+  
+  this->buffer = newBuffer;
+  
+  __size = __capacity = __n;
+}
+
+template <typename _Tp, typename _Allocator>
 inline bool
-operator==(const vector<T, Allocator>& x, const vector<T, Allocator>& y) {
+operator==(const Vector<_Tp, _Allocator>& x, const Vector<_Tp, _Allocator>& y) {
   return (x.size() == y.size() &&
           equal(x.begin(), x.end(), y.begin()));
 }
 
-template <class T, typename Allocator>
+template <typename _Tp, typename _Allocator>
 inline bool
-operator<(const vector<T, Allocator>& x, const vector<T, Allocator>& y) {
+operator<(const Vector<_Tp, _Allocator>& x, const Vector<_Tp, _Allocator>& y) {
   return lexicographical_compare(x.begin(), x.end(), y.begin(), y.end());
 }
 
-template <class T, typename Allocator>
+template <typename _Tp, typename _Allocator>
 inline bool
-operator!=(const vector<T, Allocator>& x, const vector<T, Allocator>& y) {
+operator!=(const Vector<_Tp, _Allocator>& x, const Vector<_Tp, _Allocator>& y) {
   return !(x == y);
 }
 
-template <class T, typename Allocator>
+template <typename _Tp, typename _Allocator>
 inline bool
-operator>(const vector<T, Allocator>& x, const vector<T, Allocator>& y) {
+operator>(const Vector<_Tp, _Allocator>& x, const Vector<_Tp, _Allocator>& y) {
   return y < x;
 }
 
-template <class T, typename Allocator>
+template <typename _Tp, typename _Allocator>
 inline bool
-operator<=(const vector<T, Allocator>& x, const vector<T, Allocator>& y) {
+operator<=(const Vector<_Tp, _Allocator>& x, const Vector<_Tp, _Allocator>& y) {
   return !(x > y);
 }
 
-template <class T, typename Allocator>
+template <typename _Tp, typename _Allocator>
 inline bool
-operator>=(const vector<T, Allocator>& x, const vector<T, Allocator>& y) {
+operator>=(const Vector<_Tp, _Allocator>& x, const Vector<_Tp, _Allocator>& y) {
   return !(x < y);
 }
 
-
 int main(void) {
-  vector <int> ad(4, 198);
-  vector <int> b(4, 199);
-  cout << boolalpha << (ad == b) << endl;
-  ad.clear();
-  b.clear();
-  cout << boolalpha << ad.empty() << ' ' << b.empty() << endl;
+  /* TEST THE CODE */
   return 0;
 }
