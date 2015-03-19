@@ -1,6 +1,7 @@
 #include <iostream>
 #include <cstdio>
 #include <type_traits>
+#include <initializer_list>
 #include <cstring>
 #include <string>
 #include <algorithm>
@@ -56,12 +57,25 @@ public:
     }
   }
   
+  Vector(initializer_list<_Tp> __li, const _Allocator& __a = _Allocator()) :
+  __size(0), __capacity(0), alloc(__a)
+  {
+    buffer = alloc.allocate(__li.size());
+    for (auto _list : __li)
+      buffer[__size++] = _list;
+    __capacity = __size;
+  }
+  
   ~Vector();
   
-  Vector& operator=(const Vector<_Tp, _Allocator>& __o) {
+  Vector<_Tp, _Allocator> operator=(const Vector<_Tp, _Allocator>& __o) {
     __size = __o.size();
     __capacity = __o.capacity();
     return Vector(__o.begin(), __o.end());
+  }
+  
+  Vector<_Tp, _Allocator> operator=(const initializer_list<_Tp> __li) {
+    return Vector<_Tp, _Allocator>(__li);
   }
   
   void reserve(const size_type& size);
@@ -221,6 +235,6 @@ operator>=(const Vector<_Tp, _Allocator>& x, const Vector<_Tp, _Allocator>& y) {
 }
 
 int main(void) {
-  /* TEST THE CODE */
+  
   return 0;
 }
