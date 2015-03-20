@@ -502,7 +502,7 @@ void TEST_PUSH_POP() {
 }
 
 int main(void) {
-  /* testing constructors */
+  //Testing Constructors
   TEST_CONSTRUCTOR_1();
   cout << endl << endl;
   TEST_CONSTRUCTOR_2();
@@ -513,15 +513,15 @@ int main(void) {
   cout << endl << endl;
   TEST_CONSTRUCTOR_5();
   cout << endl << endl;
-  /* constructors checked  */
+  //checked
   
-  /* testing individual functions */
+  //Testing member functions
   TEST_BEGIN_END();
   cout << endl << endl;
   TEST_ASSIGN_RESIZE();
   cout << endl << endl;
   TEST_PUSH_POP();
   cout << endl << endl;
-  /* checked  individual functions */
+  //Checked
   return 0;
 }
