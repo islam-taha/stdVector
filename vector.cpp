@@ -129,7 +129,7 @@ public:
 	const bool empty() const noexcept {
 		return (__size == 0);
 	}
-
+ 
 	const size_type max_size() const noexcept {
 		return sizeof(-1) / sizeof(size_type);
 	}
