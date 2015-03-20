@@ -46,6 +46,13 @@ public:
       uninitialized_fill_n(buffer, __n, value);
     }
   
+  explicit Vector(const Vector<_Tp, _Allocator>& __v) :
+    __size(0), __capacity(0) {
+    buffer = alloc.allocate(0);
+    for (auto it = __v.begin(); it != __v.end(); it++)
+      push_back(*it);
+  }
+  
   template<class InputIterator, class = typename enable_if<is_same<InputIterator, const _Tp*>::value>::type>
   Vector(InputIterator __first, InputIterator __last, const _Allocator& __a = _Allocator()) :
 		alloc(__a), __size(0), __capacity(0) {
