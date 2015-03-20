@@ -3,6 +3,7 @@
 #include <algorithm>
 #include <iostream>
 #include <cstring>
+#include <stdexcept>
 #include <ctime>
 #include <string>
 #include <cassert>
@@ -144,12 +145,22 @@ public:
   }
   
   const _Tp& operator[](const size_type& index) const {
-    assert(index >= 0 && index < __capacity);
     return buffer[index];
   }
   
   _Tp& operator[](const size_type& index) {
-    assert(index >= 0 && index < __capacity);
+    return buffer[index];
+  }
+
+  const _Tp& at(const size_type index) const {
+    if (index < 0 || index >= __capacity)
+      throw std::out_of_range("index out of range");
+    return buffer[index];
+  }
+
+  _Tp& at(const size_type index) {
+    if (index < 0 || index >= __capacity)
+      throw std::out_of_range("index out of range");
     return buffer[index];
   }
   
@@ -502,7 +513,7 @@ void TEST_PUSH_POP() {
 }
 
 int main(void) {
-  //Testing Constructors
+  //Testing contructors
   TEST_CONSTRUCTOR_1();
   cout << endl << endl;
   TEST_CONSTRUCTOR_2();
@@ -515,13 +526,21 @@ int main(void) {
   cout << endl << endl;
   //checked
   
-  //Testing member functions
+  //Testing member methods
   TEST_BEGIN_END();
   cout << endl << endl;
   TEST_ASSIGN_RESIZE();
   cout << endl << endl;
   TEST_PUSH_POP();
   cout << endl << endl;
-  //Checked
+  //checked
+  //end tests
+  Vector<int> ad(3);
+  try {
+    ad.at(43) = 32;
+  } catch(std::out_of_range& err) {
+    cerr << "out of range checked :) " << endl;
+  }
+  //last test case
   return 0;
 }
