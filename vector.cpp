@@ -75,14 +75,18 @@ public:
   
   ~Vector();
   
-  Vector<_Tp, _Allocator> operator=(const Vector<_Tp, _Allocator>& __o) {
-    __size = __o.size();
-    __capacity = __o.capacity();
-    return Vector(__o.begin(), __o.end());
+  Vector<_Tp, _Allocator>& operator=(const Vector<_Tp, _Allocator>& __o) {
+    this->__size = 0;
+    for (auto it = __o.begin(); it != __o.end(); it++)
+      push_back(*it);
+    return *this;
   }
   
-  Vector<_Tp, _Allocator> operator=(const initializer_list<_Tp> __li) {
-    return Vector<_Tp, _Allocator>(__li);
+  Vector<_Tp, _Allocator>& operator=(const initializer_list<_Tp> __li) {
+    this->__size = 0;
+    for (auto &li : __li)
+      push_back(li);
+    return *this;
   }
   
   void reserve(const size_type& size);
@@ -96,8 +100,8 @@ public:
       return;
     while (__size > 0)
       pop_back();
-      alloc.deallocate(this->buffer, __capacity);
-      __size = __capacity = 0;
+    alloc.deallocate(this->buffer, __capacity);
+    __size = __capacity = 0;
   }
   
   const _Tp* begin() const noexcept {
@@ -459,6 +463,33 @@ void TEST_ASSIGN_RESIZE() {
     cout << "reserve function failure\n";
   else
     cout << "reserve function checked \n";
+  cout << "\n\n";
+  cout << "Testing Assignment operators for integers..." << endl;
+  Vector<int> ax(3, 212);
+  Vector<int> bx(53, 20);
+  bx = ax;
+  if (!(bx == ax))
+    cout << "Assignment operator failure!!!\n";
+  else
+    cout << "Assignment operator checked\n";
+  bx = { 32, 33, 34, 312 };
+  if (bx[0] != 32 && bx[1] != 33 && bx.size() != 4)
+    cout << "Assignment operator failure!!!\n";
+  else
+    cout << "Assignemtn operator checked\n";
+  cout << "Testing Assignment operators for strings..." << endl;
+  Vector<string> aa(3, "boost");
+  Vector<string> bb(32, "islam");
+  bb = aa;
+  if (!(aa == bb))
+    cout << "Assignement operator failure!!!\n";
+  else
+    cout << "Assignment operator checked\n";
+  bb = { "aasdfasdf", "library", "google" };
+  if (bb[0] != "aasdfasdf" || bb[1] != "library" || bb.size() != 3)
+    cout << "Assignement operator failure!!!\n";
+  else
+    cout << "Assignment operator checked\n";
 }
 
 void TEST_PUSH_POP() {
@@ -534,13 +565,5 @@ int main(void) {
   TEST_PUSH_POP();
   cout << endl << endl;
   //checked
-  //end tests
-  Vector<int> ad(3);
-  try {
-    ad.at(43) = 32;
-  } catch(std::out_of_range& err) {
-    cerr << "out of range checked :) " << endl;
-  }
-  //last test case
   return 0;
 }
