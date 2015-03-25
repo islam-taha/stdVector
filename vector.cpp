@@ -4,6 +4,7 @@
 #include <iostream>
 #include <cstring>
 #include <stdexcept>
+#include <numeric>
 #include <ctime>
 #include <string>
 #include <cassert>
