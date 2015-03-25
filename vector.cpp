@@ -97,12 +97,7 @@ public:
   void resize(size_type __n, const _Tp& value);
   
   void clear() noexcept {
-    if (!__capacity)
-      return;
-    while (__size > 0)
-      pop_back();
-      alloc.deallocate(this->buffer, __capacity);
-      __size = __capacity = 0;
+    this->__size = 0;
   }
   
   const _Tp* begin() const noexcept {
