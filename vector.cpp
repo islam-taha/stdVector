@@ -48,7 +48,7 @@ public:
     }
   
   explicit Vector(const Vector<_Tp, _Allocator>& __v) :
-    __size(0), __capacity(0)
+  __size(0), __capacity(0)
   {
     buffer = alloc.allocate(0);
     for (auto it = __v.begin(); it != __v.end(); it++) {
@@ -100,8 +100,8 @@ public:
       return;
     while (__size > 0)
       pop_back();
-    alloc.deallocate(this->buffer, __capacity);
-    __size = __capacity = 0;
+      alloc.deallocate(this->buffer, __capacity);
+      __size = __capacity = 0;
   }
   
   const _Tp* begin() const noexcept {
@@ -145,7 +145,7 @@ public:
   }
   
   const size_type max_size() const noexcept {
-    return sizeof(-1) / sizeof(size_type);
+    return size_type(-1) / sizeof(_Tp);
   }
   
   const _Tp& operator[](const size_type& index) const {
@@ -155,13 +155,13 @@ public:
   _Tp& operator[](const size_type& index) {
     return buffer[index];
   }
-
+  
   const _Tp& at(const size_type index) const {
     if (index < 0 || index >= __capacity)
       throw std::out_of_range("index out of range");
     return buffer[index];
   }
-
+  
   _Tp& at(const size_type index) {
     if (index < 0 || index >= __capacity)
       throw std::out_of_range("index out of range");
@@ -175,6 +175,25 @@ public:
     alloc.construct(this->buffer + __size, value);
     ++__size;
   }
+  
+  void push_back(_Tp&& value) {
+    if (__size >= __capacity) {
+      reserve(__capacity > 0 ? __capacity * 2 : 1);
+    }
+    alloc.construct(this->buffer + __size, value);
+    ++__size;
+  }
+  
+  template<class... _Args>
+  inline
+  void emplace_back(_Args&&... value) {
+    if (__size >= __capacity) {
+      reserve(__capacity > 0 ? __capacity * 2 : 1);
+    }
+    alloc.construct(this->buffer + __size, forward<_Args>(value)...);
+    ++__size;
+  }
+  
 };
 
 template <typename _Tp, typename _Allocator>
@@ -541,6 +560,24 @@ void TEST_PUSH_POP() {
     cout << "clear function failure" << endl;
   else
     cout << "clear function checked " << endl;
+  cout << "\n\nTesting emplace_back for integers\n";
+  Vector <pair<int, int>> em;
+  for (int i = 0; i < 1000000; i++) {
+    em.emplace_back(i, i + 1);
+  }
+  if (em.size() != 1000000 || em[0] != make_pair(0, 1))
+    cout << "emplace_back function failure" << endl;
+  else
+    cout << "emplace_back function checked" << endl;
+  cout << "Testing emplace_back with strings...\n";
+  Vector<pair<string, string>> es;
+  for (int i = 0; i < 1000000; i++) {
+    es.emplace_back(x, x);
+  }
+  if (es.size() != 1000000 || es[0] != make_pair(x, x))
+    cout << "emplace_back function failure" << endl;
+  else
+    cout << "emplace_back function checked" << endl;
 }
 
 int main(void) {
